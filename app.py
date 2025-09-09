@@ -11,11 +11,11 @@ st.markdown("Gib deine Messwerte ein, markiere Übergänge und analysiere den Te
 # 📋 Interaktive Tabelle zur Eingabe
 st.subheader("Messwerte eingeben")
 
-# Dynamisch erweiterbare Tabelle mit 5 leeren Zeilen
+# Dynamisch erweiterbare Tabelle mit 10 leeren Zeilen
 initial_data = pd.DataFrame({
-    "Zeit (s)": [None]*5,
-    "Temperatur (°C)": [None]*5,
-    "Beobachtung": ["" for _ in range(5)]
+    "Zeit (s)": [None]*10,
+    "Temperatur (°C)": [None]*10,
+    "Beobachtung": ["" for _ in range(10)]
 })
 
 edited_df = st.data_editor(
@@ -29,8 +29,8 @@ edited_df = st.data_editor(
 # 📌 Slider für markante Punkte
 st.subheader("Markante Punkte setzen")
 try:
-    zeit_min = int(edited_df["Zeit (s)"].min(skipna=True))
-    zeit_max = int(edited_df["Zeit (s)"].max(skipna=True))
+    zeit_min = int(pd.to_numeric(edited_df["Zeit (s)"], errors="coerce").min(skipna=True))
+    zeit_max = int(pd.to_numeric(edited_df["Zeit (s)"], errors="coerce").max(skipna=True))
 except:
     zeit_min, zeit_max = 0, 300
 
@@ -41,10 +41,12 @@ verdampfungsbeginn = st.slider("Verdampfungsbeginn (s)", zeit_min, zeit_max, val
 # 📈 Diagramm anzeigen
 if st.button("Diagramm anzeigen"):
     try:
-        # Nur vollständige Zeilen verwenden
+        # Bereinigung und Typkonvertierung
         df_clean = edited_df.dropna(subset=["Zeit (s)", "Temperatur (°C)"])
         df_clean["Beobachtung"] = df_clean["Beobachtung"].fillna("")
-        
+        df_clean["Zeit (s)"] = pd.to_numeric(df_clean["Zeit (s)"], errors="coerce")
+        df_clean["Temperatur (°C)"] = pd.to_numeric(df_clean["Temperatur (°C)"], errors="coerce")
+
         # Diagramm erstellen
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(df_clean["Zeit (s)"], df_clean["Temperatur (°C)"], label="Temperaturverlauf", color="blue")
