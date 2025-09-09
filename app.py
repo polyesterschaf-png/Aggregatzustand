@@ -42,7 +42,7 @@ verdampfungsbeginn = st.slider("Verdampfungsbeginn (s)", zeit_min, zeit_max, val
 if st.button("Diagramm anzeigen"):
     try:
         df_clean = edited_df.dropna(subset=["Zeit (s)", "Temperatur (°C)"])
-        df_clean["Beobachtung"] = df_clean["Beobachtung"].fillna("")
+        df_clean = df_clean.fillna("")
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(df_clean["Zeit (s)"], df_clean["Temperatur (°C)"], label="Temperaturverlauf", color="blue")
