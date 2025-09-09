@@ -1,83 +1,89 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from io import StringIO, BytesIO
+from io import BytesIO
 
-st.set_page_config(page_title="Aggregatzustände – Auswertung", layout="centered")
+st.set_page_config(page_title="Aggregatzustände – Schmelzen & Verdampfen", layout="centered")
 
 st.title("🧪 Aggregatzustände: Schmelzen & Verdampfen")
 st.markdown("Gib deine Messwerte ein, markiere Übergänge und analysiere den Temperaturverlauf.")
 
-# Eingabe der Messwerttabelle
-st.subheader("📋 Messwerttabelle eingeben")
-default_csv = """Zeit (s),Temperatur (°C),Beobachtung
-0,0,Eis beginnt zu schmelzen
-30,0,keine Veränderung
-60,0,Wasser sichtbar
-90,1,Temperatur steigt
-120,2,
-150,3,
-180,4,Schmelze vollständig
-210,10,Wasser kocht leicht
-240,20,
-270,40,
-300,60,Dampf sichtbar"""
+# 📋 Interaktive Tabelle zur Eingabe
+st.subheader("Messwerte eingeben")
 
-csv_input = st.text_area("Messwerte im CSV-Format (mit Kopfzeile)", value=default_csv, height=250)
+# Leere Tabelle mit Beispielzeile als Kommentar
+initial_data = pd.DataFrame({
+    "Zeit (s)": [None]*10,
+    "Temperatur (°C)": [None]*10,
+    "Beobachtung": ["" for _ in range(10)]
+})
 
-# Versuch, die Tabelle zu laden
+edited_df = st.data_editor(
+    initial_data,
+    num_rows="dynamic",
+    use_container_width=True,
+    disabled=[],
+    key="messwerte"
+)
+
+# 📌 Slider für markante Punkte
+st.subheader("Markante Punkte setzen")
 try:
-    df = pd.read_csv(StringIO(csv_input))
-    if not {"Zeit (s)", "Temperatur (°C)"}.issubset(df.columns):
-        st.error("❌ Die Tabelle muss die Spalten 'Zeit (s)' und 'Temperatur (°C)' enthalten.")
-        st.stop()
-except Exception as e:
-    st.error(f"❌ Fehler beim Einlesen der Tabelle: {e}")
-    st.stop()
+    zeit_min = int(edited_df["Zeit (s)"].min(skipna=True))
+    zeit_max = int(edited_df["Zeit (s)"].max(skipna=True))
+except:
+    zeit_min, zeit_max = 0, 300
 
-# Slider für markante Punkte
-st.subheader("📌 Markante Punkte setzen")
-zeit_min, zeit_max = int(df["Zeit (s)"].min()), int(df["Zeit (s)"].max())
+schmelzbeginn = st.slider("Schmelzbeginn (s)", zeit_min, zeit_max, value=60, step=10)
+schmelzende = st.slider("Schmelzende (s)", zeit_min, zeit_max, value=180, step=10)
+verdampfungsbeginn = st.slider("Verdampfungsbeginn (s)", zeit_min, zeit_max, value=300, step=10)
 
-schmelzbeginn = st.slider("Schmelzbeginn (s)", zeit_min, zeit_max, 60, step=10)
-schmelzende = st.slider("Schmelzende (s)", zeit_min, zeit_max, 180, step=10)
-verdampfungsbeginn = st.slider("Verdampfungsbeginn (s)", zeit_min, zeit_max, 300, step=10)
+# 📈 Diagramm anzeigen
+if st.button("Diagramm anzeigen"):
+    try:
+        df_clean = edited_df.dropna(subset=["Zeit (s)", "Temperatur (°C)"])
+        df_clean["Beobachtung"] = df_clean["Beobachtung"].fillna("")
 
-# Diagramm zeichnen
-st.subheader("📈 Temperaturverlauf")
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(df["Zeit (s)"], df["Temperatur (°C)"], label="Temperaturverlauf", color="blue")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(df_clean["Zeit (s)"], df_clean["Temperatur (°C)"], label="Temperaturverlauf", color="blue")
 
-# Markante Punkte einzeichnen
-punkte = {
-    "Schmelzbeginn": schmelzbeginn,
-    "Schmelzende": schmelzende,
-    "Verdampfungsbeginn": verdampfungsbeginn
-}
+        # Markante Punkte
+        punkte = {
+            "Schmelzbeginn": schmelzbeginn,
+            "Schmelzende": schmelzende,
+            "Verdampfungsbeginn": verdampfungsbeginn
+        }
 
-for label, zeitpunkt in punkte.items():
-    if zeitpunkt in df["Zeit (s)"].values:
-        temp = df[df["Zeit (s)"] == zeitpunkt]["Temperatur (°C)"].values[0]
-        ax.plot(zeitpunkt, temp, "ro")
-        ax.text(zeitpunkt, temp + 1, label, color="red")
+        for label, zeitpunkt in punkte.items():
+            if zeitpunkt in df_clean["Zeit (s)"].values:
+                temp = df_clean[df_clean["Zeit (s)"] == zeitpunkt]["Temperatur (°C)"].values[0]
+                ax.plot(zeitpunkt, temp, "ro")
+                ax.text(zeitpunkt, temp + 1, label, color="red")
 
-ax.set_xlabel("Zeit (s)")
-ax.set_ylabel("Temperatur (°C)")
-ax.set_title("Temperaturverlauf beim Erhitzen von Eis")
-ax.grid(True)
-ax.legend()
-st.pyplot(fig)
+        ax.set_xlabel("Zeit (s)")
+        ax.set_ylabel("Temperatur (°C)")
+        ax.set_title("Temperaturverlauf beim Erhitzen von Eis")
+        ax.grid(True)
+        ax.legend()
+        st.pyplot(fig)
 
-# Exportfunktion
-buffer = BytesIO()
-fig.savefig(buffer, format="png")
-st.download_button("📥 Diagramm als PNG herunterladen", buffer.getvalue(), file_name="temperaturverlauf.png")
+        # 📥 Export als PNG
+        buffer = BytesIO()
+        fig.savefig(buffer, format="png")
+        st.download_button("📥 Diagramm als PNG herunterladen", buffer.getvalue(), file_name="temperaturverlauf.png")
 
-# Beobachtungen anzeigen
-if "Beobachtung" in df.columns:
-    st.subheader("📝 Beobachtungen")
-    st.dataframe(df[["Zeit (s)", "Temperatur (°C)", "Beobachtung"]])
+        # 📋 Beobachtungen anzeigen
+        st.subheader("Beobachtungen")
+        st.dataframe(df_clean[["Zeit (s)", "Temperatur (°C)", "Beobachtung"]])
 
-# Reflexion
-st.subheader("🧠 Reflexion")
-st.text_area("Was passiert beim Schmelzen und Verdampfen auf Teilchenebene?", height=150)
+        # 🧠 Analysefeld
+        st.subheader("Analyse des Diagramms")
+        analyse_text = st.text_area("Was zeigt dir das Temperaturverlauf-Diagramm?", height=150)
+
+        # 📥 Export als Textdatei
+        if st.button("📥 Analyse & Daten als Textdatei herunterladen"):
+            export_text = f"Analyse:\n{analyse_text}\n\nMesswerte:\n{df_clean.to_csv(index=False)}"
+            st.download_button("Download starten", export_text.encode(), file_name="auswertung.txt")
+
+    except Exception as e:
+        st.error(f"Fehler beim Zeichnen des Diagramms: {e}")
