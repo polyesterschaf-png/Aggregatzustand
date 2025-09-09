@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-st.set_page_config(page_title="Aggregatzustände – Schmelzen & Verdampfen", layout="centered")
+st.set_page_config(page_title="Aggregatzustände – Schmelzen & Verdampfen - Klasse 8D HPG", layout="centered")
 
 st.title("🧪 Aggregatzustände: Schmelzen & Verdampfen")
 st.markdown("Gib deine Messwerte ein, markiere Übergänge und analysiere den Temperaturverlauf.")
