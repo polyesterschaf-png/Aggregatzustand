@@ -11,7 +11,7 @@ st.markdown("Gib deine Messwerte ein, markiere Übergänge und analysiere den Te
 # 📋 Interaktive Tabelle zur Eingabe
 st.subheader("Messwerte eingeben")
 
-# Leere Tabelle mit Beispielzeile als Kommentar
+# Dynamisch erweiterbare Tabelle mit 10 leeren Zeilen
 initial_data = pd.DataFrame({
     "Zeit (s)": [None]*10,
     "Temperatur (°C)": [None]*10,
@@ -41,16 +41,15 @@ verdampfungsbeginn = st.slider("Verdampfungsbeginn (s)", zeit_min, zeit_max, val
 # 📈 Diagramm anzeigen
 if st.button("Diagramm anzeigen"):
     try:
+        # Nur vollständige Zeilen verwenden
         df_clean = edited_df.dropna(subset=["Zeit (s)", "Temperatur (°C)"])
         df_clean["Beobachtung"] = df_clean["Beobachtung"].fillna("")
-        st.subheader("Beobachtungen")
-        st.dataframe(df_clean.style.format(na_rep=""))
-
-
+        
+        # Diagramm erstellen
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(df_clean["Zeit (s)"], df_clean["Temperatur (°C)"], label="Temperaturverlauf", color="blue")
 
-        # Markante Punkte
+        # Markante Punkte einzeichnen
         punkte = {
             "Schmelzbeginn": schmelzbeginn,
             "Schmelzende": schmelzende,
@@ -77,7 +76,7 @@ if st.button("Diagramm anzeigen"):
 
         # 📋 Beobachtungen anzeigen
         st.subheader("Beobachtungen")
-        st.dataframe(df_clean[["Zeit (s)", "Temperatur (°C)", "Beobachtung"]])
+        st.dataframe(df_clean.style.format(na_rep=""))
 
         # 🧠 Analysefeld
         st.subheader("Analyse des Diagramms")
