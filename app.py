@@ -11,11 +11,11 @@ st.markdown("Gib deine Messwerte ein, markiere Übergänge und analysiere den Te
 # 📋 Interaktive Tabelle zur Eingabe
 st.subheader("Messwerte eingeben")
 
-# Dynamisch erweiterbare Tabelle mit 10 leeren Zeilen
+# Dynamisch erweiterbare Tabelle mit 5 leeren Zeilen
 initial_data = pd.DataFrame({
-    "Zeit (s)": [None]*10,
-    "Temperatur (°C)": [None]*10,
-    "Beobachtung": ["" for _ in range(10)]
+    "Zeit (s)": [None]*5,
+    "Temperatur (°C)": [None]*5,
+    "Beobachtung": ["" for _ in range(5)]
 })
 
 edited_df = st.data_editor(
